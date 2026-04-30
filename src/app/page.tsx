@@ -11,7 +11,7 @@ export default function Home() {
   const [endpoints, setEndpoints] = useState<ApiEndpoint[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'docs' | 'test'>('docs');
-  const [apiUrl, setApiUrl] = useState<string>('');
+  const [apiUrl, setApiUrl] = useState<string>('https://api.support4funtalk.com');
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchApiData = async () => {
@@ -19,14 +19,16 @@ export default function Home() {
     setLoading(true);
     try {
       // Use the proxy if the URL is the production API
-      const targetUrl = apiUrl.replace('https://api.support4funtalk.com', '/api-proxy');
+      const targetUrl = apiUrl.includes('api.support4funtalk.com') 
+        ? apiUrl.replace('https://api.support4funtalk.com', '/api-proxy')
+        : apiUrl;
       
       const response = await axios.get(targetUrl);
       const data = response.data;
       
       let parsedEndpoints: ApiEndpoint[] = [];
       if (data.openapi && data.paths) {
-        const baseUrl = data.servers?.[0]?.url || 'https://api.support4funtalk.com';
+        const baseUrl = 'https://api.support4funtalk.com';
         let idx = 0;
         for (const [pathUrl, methods] of Object.entries(data.paths)) {
           for (const [method, details] of Object.entries(methods as Record<string, any>)) {
@@ -38,7 +40,7 @@ export default function Home() {
                 bodyData[key] = prop.example !== undefined ? prop.example : (prop.type === 'string' ? '' : null);
               }
             }
-            const fullUrl = pathUrl.startsWith('http') ? pathUrl : `${baseUrl}${pathUrl}`;
+            const fullUrl = `${baseUrl}${pathUrl}`;
             parsedEndpoints.push({
               id: `api-${idx++}`,
               name: details.summary || `${method.toUpperCase()} ${pathUrl}`,
