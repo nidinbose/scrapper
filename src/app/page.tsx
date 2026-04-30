@@ -25,7 +25,32 @@ export default function Home() {
       const data = response.data;
       
       let parsedEndpoints: ApiEndpoint[] = [];
-      if (Array.isArray(data)) {
+      if (data.openapi && data.paths) {
+        const baseUrl = data.servers?.[0]?.url || 'https://api.support4funtalk.com';
+        let idx = 0;
+        for (const [pathUrl, methods] of Object.entries(data.paths)) {
+          for (const [method, details] of Object.entries(methods as Record<string, any>)) {
+            let bodyData: Record<string, any> | undefined = undefined;
+            const schema = details.requestBody?.content?.['application/json']?.schema;
+            if (schema && schema.properties) {
+              bodyData = {};
+              for (const [key, prop] of Object.entries(schema.properties as Record<string, any>)) {
+                bodyData[key] = prop.example !== undefined ? prop.example : (prop.type === 'string' ? '' : null);
+              }
+            }
+            const fullUrl = pathUrl.startsWith('http') ? pathUrl : `${baseUrl}${pathUrl}`;
+            parsedEndpoints.push({
+              id: `api-${idx++}`,
+              name: details.summary || `${method.toUpperCase()} ${pathUrl}`,
+              method: method.toUpperCase(),
+              url: fullUrl,
+              description: details.description,
+              body: bodyData,
+              responseSchema: details.responses?.['200']?.content?.['application/json']?.schema || details.responses?.['201']?.content?.['application/json']?.schema,
+            });
+          }
+        }
+      } else if (Array.isArray(data)) {
         parsedEndpoints = data;
       } else if (data.endpoints && Array.isArray(data.endpoints)) {
         parsedEndpoints = data.endpoints;
