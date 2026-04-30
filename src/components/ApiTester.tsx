@@ -54,7 +54,10 @@ export default function ApiTester({ endpoint }: ApiTesterProps) {
         throw new Error("Invalid Body JSON");
       }
 
-      const res = await fetch(url, {
+      // Use proxy for production API
+      const targetUrl = url.replace('https://api.support4funtalk.com', '/api-proxy');
+
+      const res = await fetch(targetUrl, {
         method,
         headers: {
           'Content-Type': 'application/json',

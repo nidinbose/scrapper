@@ -18,7 +18,10 @@ export default function Home() {
     if (!apiUrl) return;
     setLoading(true);
     try {
-      const response = await axios.get(apiUrl);
+      // Use the proxy if the URL is the production API
+      const targetUrl = apiUrl.replace('https://api.support4funtalk.com', '/api-proxy');
+      
+      const response = await axios.get(targetUrl);
       const data = response.data;
       
       let parsedEndpoints: ApiEndpoint[] = [];
