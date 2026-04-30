@@ -94,12 +94,24 @@ export default function Home() {
         }
       } else if (Array.isArray(data)) {
         parsedEndpoints = data;
-      } else if (data.endpoints && Array.isArray(data.endpoints)) {
-        parsedEndpoints = data.endpoints;
-      } else if (data.apis && Array.isArray(data.apis)) {
-        parsedEndpoints = data.apis;
+      } else if (data && typeof data === 'object') {
+        if (data.endpoints && Array.isArray(data.endpoints)) {
+          parsedEndpoints = data.endpoints;
+        } else if (data.apis && Array.isArray(data.apis)) {
+          parsedEndpoints = data.apis;
+        } else if (data.openapi || data.swagger) {
+           // It's an OpenAPI document but missing paths or we couldn't parse it
+           alert("OpenAPI JSON was fetched, but it contains no 'paths' definitions.");
+           parsedEndpoints = [];
+        } else {
+          // It's just a single JSON object endpoint definition
+          parsedEndpoints = [data];
+        }
       } else {
-        parsedEndpoints = [data];
+        alert("The URL did not return a valid API JSON. It might have returned HTML.");
+        setEndpoints([]);
+        setLoading(false);
+        return;
       }
 
       parsedEndpoints = parsedEndpoints.map((ep, idx) => ({
@@ -108,6 +120,10 @@ export default function Home() {
         name: ep.name || ep.url || `Endpoint ${idx + 1}`,
         method: (ep.method || 'GET').toUpperCase()
       }));
+
+      if (parsedEndpoints.length === 0 && data?.openapi) {
+         alert("The OpenAPI JSON was fetched successfully, but it contains an empty 'paths' object. The backend swagger configuration might be missing route annotations.");
+      }
 
       setEndpoints(parsedEndpoints);
       if (parsedEndpoints.length > 0) {
