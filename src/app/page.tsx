@@ -17,7 +17,7 @@ const resolveSchema = (schema: any, components: any, seen = new Set<string>()): 
     }
     return { type: 'object', description: `Recursive reference: ${refName}` };
   }
-  
+
   if (schema.type === 'object' && schema.properties) {
     const newProps: any = {};
     for (const [k, v] of Object.entries(schema.properties)) {
@@ -25,11 +25,11 @@ const resolveSchema = (schema: any, components: any, seen = new Set<string>()): 
     }
     return { ...schema, properties: newProps };
   }
-  
+
   if (schema.type === 'array' && schema.items) {
     return { ...schema, items: resolveSchema(schema.items, components, new Set(seen)) };
   }
-  
+
   return schema;
 };
 
@@ -45,13 +45,13 @@ export default function Home() {
     setLoading(true);
     try {
       // Use the proxy if the URL is the production API
-      const targetUrl = apiUrl.includes('api.support4funtalk.com') 
+      const targetUrl = apiUrl.includes('api.support4funtalk.com')
         ? apiUrl.replace('https://api.support4funtalk.com', '/api-proxy')
         : apiUrl;
-      
+
       const response = await axios.get(targetUrl);
       const data = response.data;
-      
+
       let parsedEndpoints: ApiEndpoint[] = [];
       if (data.openapi && data.paths) {
         const baseUrl = 'https://api.support4funtalk.com';
@@ -129,15 +129,15 @@ export default function Home() {
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
           <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>API Center</h1>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <input 
-              type="text" 
-              className="input" 
-              placeholder="Enter API URL..." 
-              value="https://api.support4funtalk.com/api-docs.json"
+            <input
+              type="text"
+              className="input"
+              placeholder="Enter API URL..."
+              value={apiUrl}
               onChange={(e) => setApiUrl(e.target.value)}
             />
-            <button 
-              className="btn btn-primary" 
+            <button
+              className="btn btn-primary"
               onClick={fetchApiData}
               disabled={loading}
               style={{ width: '100%' }}
@@ -147,10 +147,10 @@ export default function Home() {
           </div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          <ApiList 
-            endpoints={endpoints} 
-            selectedId={selectedId} 
-            onSelect={setSelectedId} 
+          <ApiList
+            endpoints={endpoints}
+            selectedId={selectedId}
+            onSelect={setSelectedId}
           />
         </div>
       </aside>
@@ -159,28 +159,28 @@ export default function Home() {
       <main className="main-content">
         {selectedEndpoint ? (
           <>
-            <div style={{ 
-              padding: '1rem 2rem', 
+            <div style={{
+              padding: '1rem 2rem',
               borderBottom: '1px solid var(--border-color)',
               display: 'flex',
               gap: '1rem',
               background: 'rgba(22, 27, 34, 0.6)',
               backdropFilter: 'blur(8px)'
             }}>
-              <button 
+              <button
                 className={`btn ${viewMode === 'docs' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setViewMode('docs')}
               >
                 Documentation
               </button>
-              <button 
+              <button
                 className={`btn ${viewMode === 'test' ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => setViewMode('test')}
               >
                 Test Endpoint
               </button>
             </div>
-            
+
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {viewMode === 'docs' ? (
                 <ApiDocumentation endpoint={selectedEndpoint} />
