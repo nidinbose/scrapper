@@ -37,7 +37,7 @@ export default function Home() {
   const [endpoints, setEndpoints] = useState<ApiEndpoint[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'docs' | 'test'>('docs');
-  const [apiUrl, setApiUrl] = useState<string>('https://api.support4funtalk.com');
+  const [apiUrl, setApiUrl] = useState<string>('https://api.support4funtalk.com/api-docs.json');
   const [loading, setLoading] = useState<boolean>(false);
 
   const fetchApiData = async () => {
