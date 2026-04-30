@@ -7,6 +7,32 @@ import ApiList from '../components/ApiList';
 import ApiDocumentation from '../components/ApiDocumentation';
 import ApiTester from '../components/ApiTester';
 
+const resolveSchema = (schema: any, components: any, seen = new Set<string>()): any => {
+  if (!schema) return schema;
+  if (schema.$ref && components?.schemas) {
+    const refName = schema.$ref.split('/').pop();
+    if (refName && components.schemas[refName] && !seen.has(refName)) {
+      seen.add(refName);
+      return resolveSchema(components.schemas[refName], components, seen);
+    }
+    return { type: 'object', description: `Recursive reference: ${refName}` };
+  }
+  
+  if (schema.type === 'object' && schema.properties) {
+    const newProps: any = {};
+    for (const [k, v] of Object.entries(schema.properties)) {
+      newProps[k] = resolveSchema(v, components, new Set(seen));
+    }
+    return { ...schema, properties: newProps };
+  }
+  
+  if (schema.type === 'array' && schema.items) {
+    return { ...schema, items: resolveSchema(schema.items, components, new Set(seen)) };
+  }
+  
+  return schema;
+};
+
 export default function Home() {
   const [endpoints, setEndpoints] = useState<ApiEndpoint[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -49,7 +75,20 @@ export default function Home() {
               description: details.description,
               tag: details.tags?.[0] || 'Default',
               body: bodyData,
-              responseSchema: details.responses?.['200']?.content?.['application/json']?.schema || details.responses?.['201']?.content?.['application/json']?.schema,
+              responseSchema: (() => {
+                let rawSchema = details.responses?.['200']?.content?.['application/json']?.schema || details.responses?.['201']?.content?.['application/json']?.schema;
+                if (rawSchema) {
+                  return resolveSchema(rawSchema, data.components);
+                }
+                // Fallback to examples if no schema
+                const content = details.responses?.['200']?.content?.['application/json'] || details.responses?.['201']?.content?.['application/json'];
+                if (content?.examples) {
+                  return { type: 'object', examples: content.examples };
+                } else if (content?.example) {
+                  return { type: 'object', example: content.example };
+                }
+                return null;
+              })(),
             });
           }
         }

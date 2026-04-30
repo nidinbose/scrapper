@@ -64,6 +64,31 @@ const renderSchema = (schema: any, level = 0): React.ReactNode => {
     );
   }
 
+  if (schema.examples) {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        {Object.entries(schema.examples).map(([exKey, exVal]: [string, any]) => (
+          <div key={exKey}>
+            <div style={{ fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+              Example ({exKey}): {exVal.summary}
+            </div>
+            <pre className="code-block" style={{ margin: 0 }}>
+              {JSON.stringify(exVal.value, null, 2)}
+            </pre>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  
+  if (schema.example) {
+    return (
+      <pre className="code-block" style={{ margin: 0 }}>
+        {JSON.stringify(schema.example, null, 2)}
+      </pre>
+    );
+  }
+
   return <span>{schema.type}</span>;
 };
 
