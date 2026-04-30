@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import axios from 'axios';
 import { ApiEndpoint } from '../types';
 import ApiList from '../components/ApiList';
 import ApiDocumentation from '../components/ApiDocumentation';
@@ -10,48 +11,43 @@ export default function Home() {
   const [endpoints, setEndpoints] = useState<ApiEndpoint[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'docs' | 'test'>('docs');
+  const [apiUrl, setApiUrl] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const content = e.target?.result as string;
-        const data = JSON.parse(content);
-        
-        // Handle different possible JSON structures from "scrapper ui"
-        // Let's assume it's an array of endpoints, or an object with a property containing endpoints
-        let parsedEndpoints: ApiEndpoint[] = [];
-        if (Array.isArray(data)) {
-          parsedEndpoints = data;
-        } else if (data.endpoints && Array.isArray(data.endpoints)) {
-          parsedEndpoints = data.endpoints;
-        } else if (data.apis && Array.isArray(data.apis)) {
-          parsedEndpoints = data.apis;
-        } else {
-          // Wrap in array if it's a single object
-          parsedEndpoints = [data];
-        }
-
-        // Add IDs if missing
-        parsedEndpoints = parsedEndpoints.map((ep, idx) => ({
-          ...ep,
-          id: ep.id || `api-${idx}`,
-          name: ep.name || ep.url || `Endpoint ${idx + 1}`,
-          method: (ep.method || 'GET').toUpperCase()
-        }));
-
-        setEndpoints(parsedEndpoints);
-        if (parsedEndpoints.length > 0) {
-          setSelectedId(parsedEndpoints[0].id);
-        }
-      } catch (err) {
-        alert("Invalid JSON file");
+  const fetchApiData = async () => {
+    if (!apiUrl) return;
+    setLoading(true);
+    try {
+      const response = await axios.get(apiUrl);
+      const data = response.data;
+      
+      let parsedEndpoints: ApiEndpoint[] = [];
+      if (Array.isArray(data)) {
+        parsedEndpoints = data;
+      } else if (data.endpoints && Array.isArray(data.endpoints)) {
+        parsedEndpoints = data.endpoints;
+      } else if (data.apis && Array.isArray(data.apis)) {
+        parsedEndpoints = data.apis;
+      } else {
+        parsedEndpoints = [data];
       }
-    };
-    reader.readAsText(file);
+
+      parsedEndpoints = parsedEndpoints.map((ep, idx) => ({
+        ...ep,
+        id: ep.id || `api-${idx}`,
+        name: ep.name || ep.url || `Endpoint ${idx + 1}`,
+        method: (ep.method || 'GET').toUpperCase()
+      }));
+
+      setEndpoints(parsedEndpoints);
+      if (parsedEndpoints.length > 0) {
+        setSelectedId(parsedEndpoints[0].id);
+      }
+    } catch (err) {
+      alert("Failed to fetch API data. Please check the URL or CORS settings.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const selectedEndpoint = endpoints.find(e => e.id === selectedId);
@@ -62,15 +58,23 @@ export default function Home() {
       <aside className="sidebar">
         <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
           <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>API Center</h1>
-          <label className="btn btn-outline" style={{ width: '100%', textAlign: 'center', cursor: 'pointer' }}>
-            <span>Upload JSON File</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <input 
-              type="file" 
-              accept=".json" 
-              onChange={handleFileUpload} 
-              style={{ display: 'none' }} 
+              type="text" 
+              className="input" 
+              placeholder="Enter API URL..." 
+              value={apiUrl}
+              onChange={(e) => setApiUrl(e.target.value)}
             />
-          </label>
+            <button 
+              className="btn btn-primary" 
+              onClick={fetchApiData}
+              disabled={loading}
+              style={{ width: '100%' }}
+            >
+              {loading ? 'Fetching...' : 'Fetch JSON'}
+            </button>
+          </div>
         </div>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <ApiList 
@@ -120,7 +124,7 @@ export default function Home() {
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '4rem', marginBottom: '1rem', opacity: 0.2 }}>🚀</div>
               <h2>Welcome to API Center</h2>
-              <p>Upload a "scrapper ui" JSON file to get started.</p>
+              <p>Enter an API URL to fetch your "scrapper ui" JSON data to get started.</p>
             </div>
           </div>
         )}
