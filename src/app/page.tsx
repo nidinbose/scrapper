@@ -45,6 +45,7 @@ export default function Home() {
               method: method.toUpperCase(),
               url: fullUrl,
               description: details.description,
+              tag: details.tags?.[0] || 'Default',
               body: bodyData,
               responseSchema: details.responses?.['200']?.content?.['application/json']?.schema || details.responses?.['201']?.content?.['application/json']?.schema,
             });

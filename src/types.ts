@@ -4,6 +4,7 @@ export interface ApiEndpoint {
   method: 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | string;
   url: string;
   description?: string;
+  tag?: string;
   headers?: Record<string, string>;
   body?: any;
   params?: Record<string, string>;
